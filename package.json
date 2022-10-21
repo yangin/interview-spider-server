@@ -1,0 +1,25 @@
+{
+  "name": "interview-spider-server",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node ./bin/www.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yangin/interview-spider-server.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/yangin/interview-spider-server/issues"
+  },
+  "homepage": "https://github.com/yangin/interview-spider-server#readme",
+  "dependencies": {
+    "express": "^4.18.2",
+    "puppeteer": "^19.0.0"
+  }
+}
