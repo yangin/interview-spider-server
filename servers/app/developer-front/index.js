@@ -1,12 +1,15 @@
-const express = require('express')
-const app = express()
+const Frontend = require('./front-end');
+const { Selector, website } = require('./constant')
 
-app.get('/', function (req, res) {
-  res.send('Admin Homepage')
-})
-
-app.get('/user', function (req, res) {
-  res.send('Admin User Page')
-})
-
-module.exports = app
+module.exports = {
+  /**
+   * spider data from exact website
+   */
+  async spiderData() {
+    const frontend = new Frontend();
+    await frontend.initWebsite(website)
+    // const data = await frontend.getIssueInfoList();
+    const data = await frontend.getCurrentPageIssueInfoList();
+    console.log(data);
+  }
+}

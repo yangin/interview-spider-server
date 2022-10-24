@@ -1,8 +1,8 @@
 const express = require('express')
-const developerFront = require('./app/developer-front')
+const developerFront = require('./api/developer-front')
 
 const app = express();
 
-app.use('/developer-front', developerFront)
+app.use('/spider/developer-front', developerFront)
 
 module.exports = app
