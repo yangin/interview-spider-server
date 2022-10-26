@@ -1,0 +1,76 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model answer {
+  id          Int      @id @default(autoincrement())
+  question_id Int
+  content     String?  @db.LongText
+  type        Int?
+  link        String?  @db.VarChar(255)
+  valid       Int      @default(1)
+  create_time DateTime @db.DateTime(0)
+
+  @@map("t_answer")
+}
+
+model catalog {
+  id          Int      @id @default(autoincrement())
+  name        String   @db.VarChar(20)
+  create_time DateTime @db.DateTime(0)
+
+  @@map("t_catalog")
+}
+
+model question {
+  id            Int      @id @default(autoincrement())
+  title         String   @db.VarChar(255)
+  description   String?  @db.Text
+  sort          Int
+  catalog_id    Int
+  create_person Int?
+  create_time   DateTime @db.DateTime(0)
+
+  @@map("t_question")
+}
+
+model questionLabel {
+  id          Int      @id @default(autoincrement())
+  question_id Int
+  label       String   @db.VarChar(10)
+  create_time DateTime @db.DateTime(0)
+
+  @@map("t_question_label")
+}
+
+model user {
+  id            Int       @id @default(autoincrement())
+  uuid          String?   @db.VarChar(36)
+  account       String?   @db.VarChar(20)
+  password      String    @db.VarChar(255)
+  phone         String?   @db.VarChar(11)
+  create_time   DateTime  @db.DateTime(0)
+  update_time   DateTime? @db.DateTime(0)
+  update_person Int?
+  email         String?   @db.VarChar(40)
+
+  @@map("t_user")
+}
+
+model userQuestion {
+  id            Int       @id @default(autoincrement())
+  user_id       Int
+  question_id   Int
+  type          Int
+  create_time   DateTime  @db.DateTime(0)
+  create_person Int?
+  update_time   DateTime? @db.DateTime(0)
+  update_person Int?
+
+  @@map("t_user_question")
+}

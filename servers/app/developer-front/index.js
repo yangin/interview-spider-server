@@ -10,6 +10,9 @@ module.exports = {
     await frontend.initWebsite(website)
     // const data = await frontend.getIssueInfoList();
     const data = await frontend.getCurrentPageIssueInfoList();
-    console.log(data);
+    // const data = await frontend.getIssueInfoListFromDB();
+    const res = await frontend.saveIssueInfoList(data)
+    // const res = await frontend.saveIssueInfoList()
+    console.log('success-->', res);
   }
 }

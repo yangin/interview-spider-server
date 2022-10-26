@@ -24,7 +24,7 @@ async function getIssueBaseInfo(issueEl) {
   if(!isValid) return null;
 
   const title = originTitle.replace(/\s/g, '').replace(/^第\d{1,3}题：/, '');
-  const index = originTitle.match(/\d{1,3}/)[0];
+  const index = Number(originTitle.match(/\d{1,3}/)[0]);
   const label = await selectAll(issueEl, Selector.issue.label, el => el.map(item => item.dataset.name));
   const link = await select(issueEl, Selector.issue.link, el => el.href);
 
@@ -108,9 +108,33 @@ async function getIssueAnswer(page) {
   return answer
 }
 
+/**
+ * get issue label params list and answer params list
+ * @param {Array<id: number, title: string>} questionList
+ * @param {Array<Object>} issueList
+ * @returns {Array<Object>}
+ */
+function getSaveIssueParams(questionList, issueList) {
+  const labelList = [];
+  const answerList = [];
+
+  issueList.forEach(issue => {
+    const { title, label, link, answer } = issue;
+    const question = questionList.find(item => item.title === title);
+    if(question) {
+      const questionId = question.id;
+      label.length && label.forEach(item => labelList.push({ questionId, label: item }));
+      answerList.push({ questionId, answer, link });
+    }
+  });
+
+  return {labelList, answerList}
+}
+
 module.exports = {
   getIssueBaseInfo,
   getIssueDescription,
   getIssueAnswer,
   getIssueAuthor,
+  getSaveIssueParams,
 }
