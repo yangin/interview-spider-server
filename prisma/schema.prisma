@@ -10,6 +10,7 @@ datasource db {
 model answer {
   id          Int      @id @default(autoincrement())
   question_id Int
+  catalog_id  Int?
   content     String?  @db.LongText
   type        Int?
   link        String?  @db.VarChar(255)
@@ -44,6 +45,7 @@ model questionLabel {
   question_id Int
   label       String   @db.VarChar(10)
   create_time DateTime @db.DateTime(0)
+  catalog_id  Int?
 
   @@map("t_question_label")
 }

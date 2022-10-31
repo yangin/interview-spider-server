@@ -1,5 +1,7 @@
 const { Selector } = require('./constant');
 const { select, selectAll } = require('../../utils/puppeteer');
+const { isEqualArray } = require('../../utils');
+
 
 /**
  * is valid issue, 
@@ -131,10 +133,41 @@ function getSaveIssueParams(questionList, issueList) {
   return {labelList, answerList}
 }
 
+/**
+ * filter update issue list
+ */
+function filterUpdateIssueList(questionList, issueList) {
+  const addQuestionList = [];
+  const updateAnswerList = [];
+  const removeLabelList = [];
+  const addLabelList = [];
+  issueList.forEach(issue => {
+    const { title, answer, link } = issue;
+    const question = questionList.find(item => item.title === title);
+    if(!question) {
+      addQuestionList.push(issue)
+      return
+    }
+
+    if(question.answer !== answer || question.link !== link) {
+      updateAnswerList.push({ questionId: question.id, answer, link });
+    }
+
+    const savedLabels = question.label.split(',');
+
+    const removeLabels = savedLabels.filter(item => !issue.label.includes(item));
+    const addLabels = issue.label.filter(item => !savedLabels.includes(item));
+    removeLabelList.push({ questionId: question.id, label: removeLabels });
+    addLabelList.push({ questionId: question.id, label: addLabels })
+  });
+  return {addQuestionList, updateAnswerList, addLabelList, removeLabelList}
+}
+
 module.exports = {
   getIssueBaseInfo,
   getIssueDescription,
   getIssueAnswer,
   getIssueAuthor,
   getSaveIssueParams,
+  filterUpdateIssueList,
 }

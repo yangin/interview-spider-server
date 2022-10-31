@@ -1,7 +1,7 @@
 const { PrismaClient } = require('@prisma/client')
 const FrontendAction = require('./front-end-action');
 const { Selector, catalogName } = require('./constant')
-const { getIssueBaseInfo, getIssueDescription, getIssueAnswer, getSaveIssueParams } = require('./helper')
+const { getIssueBaseInfo, getIssueDescription, getIssueAnswer, getSaveIssueParams, filterUpdateIssueList } = require('./helper')
 
 class Frontend extends FrontendAction {
   /**
@@ -73,9 +73,46 @@ class Frontend extends FrontendAction {
         where: { name: catalogName },
         select: { id: true }
       });
-  
-      // save question
-      const questionParams = issueList.map(item => {
+
+      const savedQuestionList = await prisma.$queryRaw`SELECT a.id, a.title, a.sort, b.content AS answer, b.link, c.label
+      FROM 
+      t_question AS a, 
+      t_answer AS b, 
+      (SELECT question_id, GROUP_CONCAT(label SEPARATOR ',') as label
+      FROM t_question_label 
+      WHERE catalog_id = ${catalogId}
+      GROUP BY question_id) AS c
+      WHERE a.id = b.question_id AND a.id = c.question_id AND b.question_id = c.question_id
+      AND a.catalog_id = b.catalog_id
+      AND a.catalog_id = ${catalogId}
+      AND b.valid = 1;`
+
+      // get addQuestionList、 updateAnswerList、 addLabelList、 removeLabelList
+      const { addQuestionList, updateAnswerList, addLabelList, removeLabelList } = filterUpdateIssueList(savedQuestionList, issueList);
+
+      // add new question
+      addQuestionList.length && await this.saveQuestion(addQuestionList, catalogId, prisma);
+
+      // update answer
+
+    }catch(e) {
+      console.error(e);
+    }finally {
+      prisma.$disconnect();
+    }
+  }
+
+  /**
+   * update answer
+   * @param {*} updateAnswerList 
+   * @param {*} prisma 
+   */
+  async saveQuestion (addQuestionList, catalogId, prisma) {
+    if(!addQuestionList || !addQuestionList.length || !catalogId || prisma) return
+
+    try {
+       // save question
+       const questionParams = addQuestionList.map(item => {
         const { title, description, index } = item;
         return {
           title,
@@ -88,12 +125,13 @@ class Frontend extends FrontendAction {
       })
       await prisma.question.createMany({ data: questionParams })
   
-      const questionList = await prisma.question.findMany({
+      // TODO: just select new add question
+      const savedQuestionList = await prisma.question.findMany({
         where: { catalog_id: catalogId },
         select: { id: true, title: true }
       });
   
-     const { labelList, answerList } = getSaveIssueParams(questionList, issueList);
+     const { labelList, answerList } = getSaveIssueParams(savedQuestionList, addQuestionList);
   
      // save answer
       const answerParams = answerList.map(item => {
@@ -118,12 +156,73 @@ class Frontend extends FrontendAction {
         }
       })
       await prisma.questionLabel.createMany({ data: labelParams })
-      await prisma.$disconnect()
     }catch(e) {
       console.error(e);
-    }finally {
-      prisma.$disconnect();
     }
+  }
+
+  /**
+   * update answer
+   * @param {*} updateAnswerList 
+   * @param {*} prisma 
+   */
+   async updateAnswer (updateAnswerList, prisma) {
+    if(!updateAnswerList || !updateAnswerList.length || prisma) return
+    const updateAnswerParams = updateAnswerList.map(item => {
+      const { id, answer, link } = item;
+      return {
+        data: {
+          content: answer,
+          link
+        },
+        where: {
+          id
+        }
+      }
+    })
+    await prisma.answer.updateMany({
+      data: updateAnswerParams
+    })
+  }
+
+  /**
+   * add question label
+   */
+  async addQuestionLabel (addLabelList, prisma) {
+    if(!addLabelList || !addLabelList.length || !prisma) return
+
+    const addLabelParams = addLabelList.map(item => {
+      const { questionId, label } = item;
+      return {
+        questionId,
+        label
+      }
+    })
+
+    await prisma.questionLabel.createMany({
+      data: addLabelParams
+    })
+  }
+
+  /**
+   * delete question label
+   */
+  async deleteQuestionLabel (removeLabelList, prisma) {
+    if(!removeLabelList || !removeLabelList.length || !prisma) return
+
+    const removeLabelParams = removeLabelList.map(item => {
+      const { questionId, label } = item;
+      return {
+        questionId,
+        label
+      }
+    })
+
+    await prisma.questionLabel.deleteMany({
+      where: {
+        OR: removeLabelParams
+      }
+    })
   }
 
   /**
@@ -132,22 +231,22 @@ class Frontend extends FrontendAction {
   async getIssueInfoListFromDB() {
     const prisma = new PrismaClient()
 
-    async function main() {
-      const data = await prisma.t_question.findMany()
-      console.log('main-->', data)
-      return data
-    }
+    const res = await prisma.$queryRaw`SELECT a.id, a.title, a.sort, b.content AS answer, b.link, c.label
+    FROM 
+    t_question AS a, 
+    t_answer AS b, 
+    (SELECT question_id, GROUP_CONCAT(label SEPARATOR ',') as label
+    FROM t_question_label 
+    WHERE catalog_id = 1
+    GROUP BY question_id) AS c
+    WHERE a.id = b.question_id AND a.id = c.question_id AND b.question_id = c.question_id
+    AND a.catalog_id = b.catalog_id
+    AND a.catalog_id = 1
+    AND b.valid = 1;`
 
-    main()
-    .then(async (data) => {
-      console.log('then-->', data)
-      await prisma.$disconnect()
-    })
-    .catch(async (e) => {
-      console.error(e)
-      await prisma.$disconnect()
-      process.exit(1)
-    })
+    prisma.$disconnect();
+
+    return res
    
   }
 }
